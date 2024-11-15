@@ -19,8 +19,8 @@ type commands struct {
 }
 
 func handlerLogin(s *state, cmd command) error {
-	if cmd.arguments == nil {
-		return fmt.Errorf("expected username; received nil args")
+	if len(cmd.arguments) == 0 {
+		return fmt.Errorf("username is required to login!")
 	}
 	// TODO: sanitize this input!
 	username := cmd.arguments[0]
