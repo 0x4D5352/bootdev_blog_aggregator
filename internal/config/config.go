@@ -34,13 +34,13 @@ func getConfigFilePath() (string, error) {
 	return gatorPath, nil
 }
 
-func (cfg *Config) SetUser(username string) {
+func (cfg *Config) SetUser(username string) error {
 	cfg.CurrentUserName = username
 	err := write(cfg)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-
+	return nil
 }
 
 func write(cfg *Config) error {
