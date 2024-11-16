@@ -82,6 +82,22 @@ func handlerGetUsers(s *state, _ command) error {
 	return nil
 }
 
+func handlerAgg(s *state, _ command) error {
+	feedURL := "https://www.wagslane.dev/index.xml"
+	feed, err := fetchFeed(context.Background(), feedURL)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("feed:\n%+v\n", feed)
+	return nil
+}
+
+func hanlderAddFeed(s *state, cmd command) error {
+	name := cmd.arguments[0]
+	url := cmd.arguments[1]
+	return nil
+}
+
 type commands struct {
 	maps map[string]func(*state, command) error
 }
