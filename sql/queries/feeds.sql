@@ -10,14 +10,16 @@ VALUES (
 )
 RETURNING *;
 
-/*
 -- name: GetFeed :one
 SELECT * FROM feeds
 WHERE name = $1 LIMIT 1;
+
+-- name: GetFeedByURL :one
+SELECT * FROM feeds
+WHERE url = $1 LIMIT 1;
 
 -- name: ResetFeeds :exec
 DELETE FROM feeds;
 
 -- name: GetFeeds :many
 SELECT * FROM feeds;
-*/
