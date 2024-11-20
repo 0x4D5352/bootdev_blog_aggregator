@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"fmt"
-	"html"
 	"io"
 	"net/http"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/0x4D5352/bootdev_blog_aggregator/internal/database"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"golang.org/x/net/html"
 )
 
 type RSSFeed struct {
@@ -86,16 +86,33 @@ func scrapeFeeds(s *state) error {
 		fmt.Printf("Adding %+v\n", item)
 		title := sql.NullString{String: item.Title}
 		if item.Title != "" {
+			// fmt.Printf("Title, unformatted: %s\n", item.Title)
 			title.Valid = true
 		}
 		description := sql.NullString{String: item.Description}
 		if item.Description != "" {
+			if strings.Contains(item.Description, "<") {
+				doc, err := html.Parse(strings.NewReader(item.Description))
+				if err != nil {
+					return err
+				}
+				var builder strings.Builder
+				for n := range doc.Descendants() {
+					if n.Type == html.TextNode {
+						if n.Data == "" || n.Data == "\n" {
+							continue
+						}
+						builder.WriteString(n.Data)
+					}
+				}
+				description.String = builder.String()
+			}
 			description.Valid = true
 		}
 		// fmt.Printf("Checking Pubdate: %s\n", item.PubDate)
 		pubDate, err := time.Parse(time.RFC1123Z, item.PubDate)
 		if err != nil {
-			fmt.Println("poof")
+			fmt.Println("date parsing failed!!")
 			return err
 		}
 		post, err := s.db.CreatePost(context.Background(), database.CreatePostParams{
@@ -117,6 +134,7 @@ func scrapeFeeds(s *state) error {
 			return err
 		}
 		fmt.Printf("Added %+v\n", post)
+		fmt.Println()
 	}
 	return nil
 }
