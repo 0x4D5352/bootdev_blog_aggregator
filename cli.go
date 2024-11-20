@@ -92,14 +92,19 @@ func handlerGetUsers(s *state, _ command) error {
 	return nil
 }
 
-func handlerAgg(_ *state, _ command) error {
-	feedURL := "https://www.wagslane.dev/index.xml"
-	feed, err := fetchFeed(context.Background(), feedURL)
+func handlerAgg(s *state, cmd command) error {
+	if len(cmd.arguments) == 0 {
+		return fmt.Errorf("duration required to aggregate feeds!")
+	}
+	timeBetweenRequests, err := time.ParseDuration(cmd.arguments[0])
+	fmt.Printf("Collecting feeds every %v\n", timeBetweenRequests)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("feed:\n%+v\n", feed)
-	return nil
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
