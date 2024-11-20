@@ -1,0 +1,4 @@
+{
+	"db_url":"postgres://REPLACE_WITH_YOUR_USERNAME:@localhost:5432/gator?sslmode=disable",
+	"current_user_name":""
+}
