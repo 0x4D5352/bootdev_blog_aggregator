@@ -81,9 +81,9 @@ func scrapeFeeds(s *state) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Articles from %s\n", feed.Channel.Title)
+	// fmt.Printf("Articles from %s\n", feed.Channel.Title)
 	for _, item := range feed.Channel.Item {
-		fmt.Printf("Adding %+v\n", item)
+		// fmt.Printf("Adding %+v\n", item)
 		title := sql.NullString{String: item.Title}
 		if item.Title != "" {
 			// fmt.Printf("Title, unformatted: %s\n", item.Title)
@@ -108,6 +108,10 @@ func scrapeFeeds(s *state) error {
 				description.String = builder.String()
 			}
 			description.Valid = true
+		}
+		if !title.Valid && !description.Valid {
+			fmt.Printf("Blank Article: %+v\n", item)
+			continue
 		}
 		// fmt.Printf("Checking Pubdate: %s\n", item.PubDate)
 		pubDate, err := time.Parse(time.RFC1123Z, item.PubDate)

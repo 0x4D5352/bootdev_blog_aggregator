@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/0x4D5352/bootdev_blog_aggregator/internal/config"
@@ -210,6 +211,33 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 		return err
 	}
 	fmt.Printf("unfollowed %s!\n", feed.Name)
+	return nil
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	fmt.Println("browsing...")
+	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.Name)
+	feed_ids := make([]uuid.UUID, len(feeds))
+	for _, feed := range feeds {
+		feed_ids = append(feed_ids, feed.FeedID)
+	}
+	if err != nil {
+		return err
+	}
+	limit := 2
+	if len(cmd.arguments) != 0 {
+		limit, err = strconv.Atoi(cmd.arguments[0])
+	}
+	posts, err := s.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+		Column1: feed_ids,
+		Limit:   int32(limit),
+	})
+	if err != nil {
+		return err
+	}
+	for _, post := range posts {
+		fmt.Printf("\nTitle: %s\nURL: %s\nPublished On: %v\nDescription: %s\n", post.Title.String, post.Url, post.PublishedAt, post.Description.String)
+	}
 	return nil
 }
 

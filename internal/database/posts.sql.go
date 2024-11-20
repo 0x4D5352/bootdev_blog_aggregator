@@ -146,7 +146,7 @@ func (q *Queries) GetPosts(ctx context.Context) ([]Post, error) {
 const getPostsForUser = `-- name: GetPostsForUser :many
 SELECT id, created_at, updated_at, title, url, description, published_at, feed_id FROM posts
 WHERE feed_id = ANY($1::uuid[])
-ORDER BY published_at LIMIT $2
+ORDER BY published_at DESC LIMIT $2
 `
 
 type GetPostsForUserParams struct {
