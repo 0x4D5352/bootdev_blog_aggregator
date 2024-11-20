@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/0x4D5352/bootdev_blog_aggregator/internal/database"
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type RSSFeed struct {
@@ -67,12 +69,13 @@ func scrapeFeeds(s *state) error {
 	if err != nil {
 		return err
 	}
-	t := sql.NullTime{
-		Time:  time.Now().UTC(),
+	t := time.Now().UTC()
+	nt := sql.NullTime{
+		Time:  t,
 		Valid: true,
 	}
 	err = s.db.MarkFeedFetched(context.Background(), database.MarkFeedFetchedParams{
-		LastFetchedAt: t,
+		LastFetchedAt: nt,
 		ID:            next_feed.ID,
 	})
 	if err != nil {
@@ -80,11 +83,40 @@ func scrapeFeeds(s *state) error {
 	}
 	fmt.Printf("Articles from %s\n", feed.Channel.Title)
 	for _, item := range feed.Channel.Item {
-		if item.Title == "" {
-			fmt.Printf("Weirdness from %+v\n", item)
-			continue
+		fmt.Printf("Adding %+v\n", item)
+		title := sql.NullString{String: item.Title}
+		if item.Title != "" {
+			title.Valid = true
 		}
-		fmt.Printf("- %s\n", item.Title)
+		description := sql.NullString{String: item.Description}
+		if item.Description != "" {
+			description.Valid = true
+		}
+		// fmt.Printf("Checking Pubdate: %s\n", item.PubDate)
+		pubDate, err := time.Parse(time.RFC1123Z, item.PubDate)
+		if err != nil {
+			fmt.Println("poof")
+			return err
+		}
+		post, err := s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   t,
+			UpdatedAt:   t,
+			Title:       title,
+			Url:         item.Link,
+			Description: description,
+			PublishedAt: pubDate,
+			FeedID:      next_feed.ID,
+		})
+		if pqErr, ok := err.(*pq.Error); ok {
+			// 23505 == "unique_violation" https://www.postgresql.org/docs/9.3/errcodes-appendix.html
+			if pqErr.Code == "23505" {
+				fmt.Printf("%s already added!\n", item.Title)
+				continue
+			}
+			return err
+		}
+		fmt.Printf("Added %+v\n", post)
 	}
 	return nil
 }
